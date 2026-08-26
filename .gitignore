@@ -1,2 +1,6 @@
 *_private
 .worktrees/
+.env
+data/
+*.state.json
+node_modules/
