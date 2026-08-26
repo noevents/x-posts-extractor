@@ -20,6 +20,8 @@ Fetch more, or a specific date window:
 
     node bin/cli.js fetch --username JosephKChoi --count 200 --since 2023-09-01 --until 2023-11-01
 
+Each run writes at most `--count` new tweets (default 5) to the output file; re-running can add more as deeper pagination turns up further deduped tweets, so `--count` caps a single run rather than the file's total size.
+
 Output is written to `data/<username>.jsonl` (override with `--out`), one JSON object per line:
 
     {"id_str":"...","created_at":"...","full_text":"...","favorite_count":0,"retweet_count":0,"reply_count":0,"quote_count":0,"lang":"en","conversation_id_str":"..."}
