@@ -31,6 +31,9 @@ export function buildHeaders(config) {
     'x-twitter-active-user': 'yes',
     'x-twitter-auth-type': 'OAuth2Session',
     'x-twitter-client-language': 'en',
+    'user-agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    referer: 'https://x.com/',
   };
   if (config.clientTransactionId) {
     headers['x-client-transaction-id'] = config.clientTransactionId;

@@ -36,6 +36,8 @@ test('buildHeaders derives x-csrf-token from ct0 and omits optional header when 
   assert.match(headers.cookie, /auth_token=tok/);
   assert.match(headers.cookie, /ct0=csrf/);
   assert.equal('x-client-transaction-id' in headers, false);
+  assert.match(headers['user-agent'], /Mozilla/);
+  assert.equal(headers.referer, 'https://x.com/');
 });
 
 test('buildHeaders includes x-client-transaction-id when set', () => {
