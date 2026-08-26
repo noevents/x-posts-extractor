@@ -1,0 +1,85 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "entryId": "tweet-1708275709268152401",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelineTweet",
+                      "tweet_results": {
+                        "result": {
+                          "__typename": "Tweet",
+                          "rest_id": "1708275709268152401",
+                          "legacy": {
+                            "id_str": "1708275709268152401",
+                            "created_at": "Sun Oct 01 00:20:41 +0000 2023",
+                            "full_text": "In college, I ran 3 dropshipping stores",
+                            "favorite_count": 7,
+                            "retweet_count": 0,
+                            "reply_count": 0,
+                            "quote_count": 0,
+                            "lang": "en",
+                            "conversation_id_str": "1708275709268152401"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "tweet-1707918005899071957",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelineTweet",
+                      "tweet_results": {
+                        "result": {
+                          "__typename": "Tweet",
+                          "rest_id": "1707918005899071957",
+                          "legacy": {
+                            "id_str": "1707918005899071957",
+                            "created_at": "Sat Sep 30 01:12:05 +0000 2023",
+                            "full_text": "Second sample tweet",
+                            "favorite_count": 2,
+                            "retweet_count": 1,
+                            "reply_count": 0,
+                            "quote_count": 0,
+                            "lang": "en",
+                            "conversation_id_str": "1707918005899071957"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "cursor-top-9223372036854775807",
+                  "content": {
+                    "__typename": "TimelineTimelineCursor",
+                    "cursorType": "Top",
+                    "value": "TOPCURSORVALUE"
+                  }
+                },
+                {
+                  "entryId": "cursor-bottom-0",
+                  "content": {
+                    "__typename": "TimelineTimelineCursor",
+                    "cursorType": "Bottom",
+                    "value": "BOTTOMCURSORVALUE"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
