@@ -1,5 +1,5 @@
 import { buildSearchTimelineUrl } from './query.js';
-import { parseSearchTimelineResponse } from './parse.js';
+import { parseSearchTimelineResponse, ApiError } from './parse.js';
 import { buildHeaders } from './config.js';
 import {
   pickBaseDelayMs,
@@ -22,9 +22,10 @@ export async function* paginateSearchTimeline({
   sleepImpl = sleep,
   rng = Math.random,
   log = () => {},
+  startCursor,
 }) {
   const headers = buildHeaders(config);
-  let cursor;
+  let cursor = startCursor;
   let requestCount = 0;
   let nextPauseAt = pickBatchPauseThreshold(rng);
 
@@ -53,7 +54,16 @@ export async function* paginateSearchTimeline({
         continue;
       }
 
-      const json = await res.json();
+      if (res.status < 200 || res.status >= 300) {
+        throw new ApiError(`Unexpected HTTP status ${res.status} from SearchTimeline`);
+      }
+
+      let json;
+      try {
+        json = await res.json();
+      } catch (err) {
+        throw new ApiError(`Failed to parse response as JSON (status ${res.status}): ${err.message}`);
+      }
       page = parseSearchTimelineResponse(json);
       break;
     }
@@ -64,7 +74,7 @@ export async function* paginateSearchTimeline({
       return;
     }
 
-    yield page.tweets;
+    yield { tweets: page.tweets, cursor: page.bottomCursor };
 
     if (!page.bottomCursor) {
       return;

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { paginateSearchTimeline, QueryIdStaleError, RetriesExhaustedError } from '../src/client.js';
+import { ApiError } from '../src/parse.js';
 
 const config = { authToken: 'tok', ct0: 'csrf', bearer: 'b', queryId: 'QID' };
 
@@ -74,7 +75,7 @@ test('paginates until bottom cursor is null', async () => {
     paginateSearchTimeline({ username: 'joe', config, fetchImpl, sleepImpl, rng: () => 0 })
   );
 
-  assert.deepEqual(pages.map((p) => p.map((t) => t.id_str)), [['1', '2'], ['3']]);
+  assert.deepEqual(pages.map((p) => p.tweets.map((t) => t.id_str)), [['1', '2'], ['3']]);
   assert.ok(sleeps.length >= 1);
 });
 
@@ -90,7 +91,7 @@ test('stops when bottom cursor repeats', async () => {
     paginateSearchTimeline({ username: 'joe', config, fetchImpl, sleepImpl, rng: () => 0 })
   );
 
-  assert.deepEqual(pages.map((p) => p.map((t) => t.id_str)), [['1']]);
+  assert.deepEqual(pages.map((p) => p.tweets.map((t) => t.id_str)), [['1']]);
 });
 
 test('retries on 429 with backoff then succeeds', async () => {
@@ -107,7 +108,7 @@ test('retries on 429 with backoff then succeeds', async () => {
     paginateSearchTimeline({ username: 'joe', config, fetchImpl, sleepImpl, rng: () => 0 })
   );
 
-  assert.deepEqual(pages.map((p) => p.map((t) => t.id_str)), [['1']]);
+  assert.deepEqual(pages.map((p) => p.tweets.map((t) => t.id_str)), [['1']]);
   assert.deepEqual(sleeps.slice(0, 2), [30_000, 60_000]);
 });
 
@@ -127,4 +128,50 @@ test('throws QueryIdStaleError on 404', async () => {
   await assert.rejects(async () => {
     await collect(paginateSearchTimeline({ username: 'joe', config, fetchImpl, sleepImpl, rng: () => 0 }));
   }, QueryIdStaleError);
+});
+
+test('throws ApiError on unexpected status (e.g. 500)', async () => {
+  const fetchImpl = async () => jsonResponse(500, {});
+  const sleepImpl = async () => {};
+
+  await assert.rejects(async () => {
+    await collect(paginateSearchTimeline({ username: 'joe', config, fetchImpl, sleepImpl, rng: () => 0 }));
+  }, ApiError);
+});
+
+test('throws ApiError when response body is not valid JSON', async () => {
+  const fetchImpl = async () => ({
+    status: 200,
+    json: async () => {
+      throw new SyntaxError('Unexpected token < in JSON');
+    },
+  });
+  const sleepImpl = async () => {};
+
+  await assert.rejects(async () => {
+    await collect(paginateSearchTimeline({ username: 'joe', config, fetchImpl, sleepImpl, rng: () => 0 }));
+  }, ApiError);
+});
+
+test('uses startCursor as the cursor on the very first request', async () => {
+  const responses = [jsonResponse(200, pageBody(['1'], null))];
+  const urls = [];
+  const fetchImpl = async (url) => {
+    urls.push(url);
+    return responses.shift();
+  };
+  const sleepImpl = async () => {};
+
+  await collect(
+    paginateSearchTimeline({
+      username: 'joe',
+      config,
+      fetchImpl,
+      sleepImpl,
+      rng: () => 0,
+      startCursor: 'RESUME_CURSOR',
+    })
+  );
+
+  assert.ok(urls[0].includes('RESUME_CURSOR'), `expected first URL to include startCursor, got: ${urls[0]}`);
 });
