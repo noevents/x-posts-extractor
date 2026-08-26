@@ -26,14 +26,24 @@ export async function runFetch(options, config, deps = {}) {
     startCursor,
   });
 
+  // Tracks the cursor that was used to *request* the page currently being
+  // processed (as opposed to page.cursor, which points at the *next* page).
+  // Needed so that when a page gets truncated by the --count budget, we can
+  // persist a resume point that re-fetches this same page next run instead
+  // of skipping past it and losing the untruncated leftover tweets.
+  let requestCursor = startCursor;
+
   for await (const page of gen) {
     const newTweetsAll = page.tweets.filter((t) => !existingIds.has(t.id_str));
     const remaining = Math.max(0, options.count - collected);
     const newTweets = newTweetsAll.slice(0, remaining);
+    const truncated = newTweetsAll.length > remaining;
     for (const t of newTweets) existingIds.add(t.id_str);
     await appendTweets(options.out, newTweets);
-    await saveState(stateFile, { cursor: page.cursor, lastRunAt: new Date().toISOString() });
+    const resumeCursor = truncated ? requestCursor : page.cursor;
+    await saveState(stateFile, { cursor: resumeCursor, lastRunAt: new Date().toISOString() });
     collected += newTweets.length;
+    requestCursor = page.cursor;
     log(`Collected ${collected}/${options.count} tweets...`);
     if (collected >= options.count) break;
   }

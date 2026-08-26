@@ -122,6 +122,48 @@ test('re-running runFetch against an existing output file dedupes', async () => 
   );
 });
 
+test('runFetch does not lose leftover tweets when a page is truncated by --count', async () => {
+  const dir = await tmpDir();
+  const out = path.join(dir, 'joe.jsonl');
+
+  // Page 1 has 8 tweets and a bottom cursor pointing at page 2.
+  // Page 2 has different tweets, so if we mistakenly resumed from page 2's
+  // cursor, the test would surface tweets ['9','10'] instead of the leftover
+  // ['6','7','8'] from page 1.
+  function fetchImplFor(page1Cursor) {
+    return async (url) => {
+      if (url.includes(page1Cursor)) {
+        return jsonResponse(200, pageBody(['9', '10'], null));
+      }
+      return jsonResponse(200, pageBody(['1', '2', '3', '4', '5', '6', '7', '8'], page1Cursor));
+    };
+  }
+
+  const first = await runFetch(
+    { username: 'joe', count: 5, out },
+    config,
+    { fetchImpl: fetchImplFor('CURSOR_PAGE_2'), sleepImpl: async () => {}, rng: () => 0, log: () => {} }
+  );
+  assert.equal(first.collected, 5);
+
+  // Second run with a budget matching exactly the page-1 leftovers should
+  // re-fetch page 1 (not jump to page 2), dedupe the 5 already-written
+  // tweets, and pick up the leftover 3 -- and nothing from page 2.
+  const second = await runFetch(
+    { username: 'joe', count: 3, out },
+    config,
+    { fetchImpl: fetchImplFor('CURSOR_PAGE_2'), sleepImpl: async () => {}, rng: () => 0, log: () => {} }
+  );
+  assert.equal(second.collected, 3);
+
+  const content = await readFile(out, 'utf8');
+  const lines = content.trim().split('\n');
+  assert.deepEqual(
+    lines.map((l) => JSON.parse(l).id_str).sort((a, b) => a - b),
+    ['1', '2', '3', '4', '5', '6', '7', '8']
+  );
+});
+
 test('runFetch propagates ApiError from a failing fetchImpl as a rejected promise', async () => {
   const dir = await tmpDir();
   const out = path.join(dir, 'joe.jsonl');
