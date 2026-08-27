@@ -64,3 +64,22 @@ export function buildSearchTimelineUrl({ queryId, username, since, until, cursor
 
   return `https://x.com/i/api/graphql/${queryId}/SearchTimeline?${params.toString()}`;
 }
+
+export function buildUserOriginalsTimelineUrl({ queryId, userId, cursor, count = 20 }) {
+  const variables = {
+    userId,
+    count,
+    includePromotedContent: true,
+    withQuickPromoteEligibilityTweetFields: true,
+    withVoice: true,
+  };
+  if (cursor) variables.cursor = cursor;
+
+  const params = new URLSearchParams({
+    variables: JSON.stringify(variables),
+    features: JSON.stringify(FEATURES),
+    fieldToggles: JSON.stringify({ withArticlePlainText: false }),
+  });
+
+  return `https://x.com/i/api/graphql/${queryId}/UserOriginalsTimeline?${params.toString()}`;
+}

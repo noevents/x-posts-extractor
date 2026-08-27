@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { runFetch, runFindStreak } from '../src/cli-runner.js';
 import { ApiError } from '../src/parse.js';
+import { RetriesExhaustedError } from '../src/client.js';
 
 const config = { authToken: 'tok', ct0: 'csrf', bearer: 'b', queryId: 'QID' };
 
@@ -203,4 +204,64 @@ test('runFindStreak writes no files and returns the correct streak', async () =>
   assert.equal(streak.days, 2);
   assert.equal(await fileExists(path.join(dir, 'joe.jsonl')), false);
   assert.equal(await fileExists(path.join(dir, 'joe.state.json')), false);
+});
+
+function withCreatedAt(body, entryIndex, createdAt) {
+  body.data.search_by_raw_query.search_timeline.timeline.instructions[0].entries[
+    entryIndex
+  ].content.itemContent.tweet_results.result.legacy.created_at = createdAt;
+  return body;
+}
+
+test('runFindStreak persists progress and resumes after RetriesExhaustedError', async () => {
+  const dir = await tmpDir();
+  const out = path.join(dir, 'joe.jsonl');
+  const options = { username: 'joe', since: '2023-10-01', until: '2023-10-10', out };
+
+  const page1 = withCreatedAt(
+    withCreatedAt(pageBody(['1', '2'], 'CURSOR1'), 0, 'Mon Oct 02 00:20:41 +0000 2023'),
+    1,
+    'Tue Oct 03 00:20:41 +0000 2023'
+  );
+  const firstRunResponses = [
+    jsonResponse(200, page1),
+    ...Array(6).fill(null).map(() => jsonResponse(429, {})),
+  ];
+  const firstFetchImpl = async () => firstRunResponses.shift();
+
+  await assert.rejects(
+    async () =>
+      runFindStreak(options, config, { fetchImpl: firstFetchImpl, sleepImpl: async () => {}, rng: () => 0, log: () => {} }),
+    RetriesExhaustedError
+  );
+
+  // Progress from the successful first page must already be on disk.
+  const storedAfterFailure = (await readFile(out, 'utf8')).trim().split('\n').map((l) => JSON.parse(l).id_str);
+  assert.deepEqual(storedAfterFailure.sort(), ['1', '2']);
+  const state = JSON.parse(await readFile(path.join(dir, 'joe.state.json'), 'utf8'));
+  assert.equal(state.cursor, 'CURSOR1');
+
+  // Re-running should resume from CURSOR1 rather than refetching page 1.
+  const page2 = withCreatedAt(pageBody(['3'], null), 0, 'Wed Oct 04 00:20:41 +0000 2023');
+  const requestedCursors = [];
+  const secondFetchImpl = async (url) => {
+    requestedCursors.push(new URL(url).searchParams.get('variables'));
+    return jsonResponse(200, page2);
+  };
+
+  const streak = await runFindStreak(options, config, {
+    fetchImpl: secondFetchImpl,
+    sleepImpl: async () => {},
+    rng: () => 0,
+    log: () => {},
+  });
+
+  assert.ok(JSON.parse(requestedCursors[0]).cursor === 'CURSOR1');
+  assert.ok(streak);
+  assert.equal(streak.days, 3);
+  assert.equal(streak.startDate, '2023-10-02');
+  assert.equal(streak.endDate, '2023-10-04');
+
+  const storedAfterResume = (await readFile(out, 'utf8')).trim().split('\n').map((l) => JSON.parse(l).id_str);
+  assert.deepEqual(storedAfterResume.sort(), ['1', '2', '3']);
 });

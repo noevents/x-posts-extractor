@@ -8,31 +8,31 @@ import {
   MAX_RETRIES,
 } from '../src/pacing.js';
 
-test('pickBaseDelayMs stays within 2000-4000ms', () => {
-  assert.equal(pickBaseDelayMs(() => 0), 2000);
-  assert.equal(pickBaseDelayMs(() => 0.999999), 4000);
+test('pickBaseDelayMs stays within 4000-7000ms', () => {
+  assert.equal(pickBaseDelayMs(() => 0), 4000);
+  assert.equal(pickBaseDelayMs(() => 0.999999), 7000);
 });
 
-test('pickBatchPauseThreshold stays within 20-30', () => {
-  assert.equal(pickBatchPauseThreshold(() => 0), 20);
-  assert.equal(pickBatchPauseThreshold(() => 0.999999), 30);
+test('pickBatchPauseThreshold stays within 8-12', () => {
+  assert.equal(pickBatchPauseThreshold(() => 0), 8);
+  assert.equal(pickBatchPauseThreshold(() => 0.999999), 12);
 });
 
-test('pickBatchPauseMs stays within 30000-60000ms', () => {
-  assert.equal(pickBatchPauseMs(() => 0), 30000);
-  assert.equal(pickBatchPauseMs(() => 0.999999), 60000);
+test('pickBatchPauseMs stays within 60000-120000ms', () => {
+  assert.equal(pickBatchPauseMs(() => 0), 60000);
+  assert.equal(pickBatchPauseMs(() => 0.999999), 120000);
 });
 
-test('backoffDelayMs doubles from 30s and caps at 10 minutes', () => {
-  assert.equal(backoffDelayMs(1), 30_000);
-  assert.equal(backoffDelayMs(2), 60_000);
-  assert.equal(backoffDelayMs(3), 120_000);
-  assert.equal(backoffDelayMs(4), 240_000);
-  assert.equal(backoffDelayMs(5), 480_000);
-  assert.equal(backoffDelayMs(6), 600_000);
-  assert.equal(backoffDelayMs(10), 600_000);
+test('backoffDelayMs doubles from 60s and caps at 15 minutes', () => {
+  assert.equal(backoffDelayMs(1), 60_000);
+  assert.equal(backoffDelayMs(2), 120_000);
+  assert.equal(backoffDelayMs(3), 240_000);
+  assert.equal(backoffDelayMs(4), 480_000);
+  assert.equal(backoffDelayMs(5), 900_000);
+  assert.equal(backoffDelayMs(6), 900_000);
+  assert.equal(backoffDelayMs(10), 900_000);
 });
 
-test('MAX_RETRIES is 5', () => {
-  assert.equal(MAX_RETRIES, 5);
+test('MAX_RETRIES is 6', () => {
+  assert.equal(MAX_RETRIES, 6);
 });

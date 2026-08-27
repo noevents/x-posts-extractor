@@ -1,4 +1,5 @@
 const DEFAULT_QUERY_ID = 'hyPfJYJ_XAtDYoslQc-Rgg';
+const DEFAULT_USER_TIMELINE_QUERY_ID = 'jcbfqPu_2XMNOwVyGypRhw';
 const DEFAULT_BEARER =
   'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
 
@@ -17,6 +18,7 @@ export function loadConfig(env = process.env) {
     ct0,
     bearer: env.BEARER || DEFAULT_BEARER,
     queryId: env.QUERY_ID || DEFAULT_QUERY_ID,
+    userTimelineQueryId: env.USER_TIMELINE_QUERY_ID || DEFAULT_USER_TIMELINE_QUERY_ID,
     clientTransactionId: env.CLIENT_TRANSACTION_ID || undefined,
   };
 }

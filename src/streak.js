@@ -1,4 +1,4 @@
-function toDateStr(createdAt) {
+export function toDateStr(createdAt) {
   return new Date(createdAt).toISOString().slice(0, 10);
 }
 

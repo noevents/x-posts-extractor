@@ -1,19 +1,24 @@
 import { readFile, appendFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-export async function loadExistingIds(filePath) {
+export async function loadExistingTweets(filePath) {
   try {
     const content = await readFile(filePath, 'utf8');
-    const ids = new Set();
+    const tweets = [];
     for (const line of content.split('\n')) {
       if (!line.trim()) continue;
-      ids.add(JSON.parse(line).id_str);
+      tweets.push(JSON.parse(line));
     }
-    return ids;
+    return tweets;
   } catch (err) {
-    if (err.code === 'ENOENT') return new Set();
+    if (err.code === 'ENOENT') return [];
     throw err;
   }
+}
+
+export async function loadExistingIds(filePath) {
+  const tweets = await loadExistingTweets(filePath);
+  return new Set(tweets.map((t) => t.id_str));
 }
 
 export async function appendTweets(filePath, tweets) {

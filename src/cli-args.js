@@ -1,8 +1,12 @@
 import { parseArgs } from 'node:util';
 
 const USAGE = `Usage:
-  cli.js fetch --username <name> [--count 5] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out data/<name>.jsonl]
-  cli.js find-streak --username <name> --since YYYY-MM-DD --until YYYY-MM-DD`;
+  cli.js fetch --username <name> [--count 5] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out data/<name>.jsonl] [--user-id <id>]
+  cli.js find-streak --username <name> --since YYYY-MM-DD --until YYYY-MM-DD [--user-id <id>] [--out data/<name>.jsonl]
+
+--user-id switches from the (incomplete) search-based fetch to the account's
+full timeline, which actually backfills. Get it from DevTools > Network on the
+target profile: any UserOriginalsTimeline/UserTweets request's variables.userId.`;
 
 export function parseCliArgs(argv) {
   const [command, ...rest] = argv;
@@ -17,6 +21,7 @@ export function parseCliArgs(argv) {
         since: { type: 'string' },
         until: { type: 'string' },
         out: { type: 'string' },
+        'user-id': { type: 'string' },
       },
     });
     if (!values.username) throw new Error('--username is required\n\n' + USAGE);
@@ -28,6 +33,7 @@ export function parseCliArgs(argv) {
         since: values.since,
         until: values.until,
         out: values.out || `data/${values.username}.jsonl`,
+        ...(values['user-id'] && { userId: values['user-id'] }),
       },
     };
   }
@@ -39,6 +45,8 @@ export function parseCliArgs(argv) {
         username: { type: 'string' },
         since: { type: 'string' },
         until: { type: 'string' },
+        'user-id': { type: 'string' },
+        out: { type: 'string' },
       },
     });
     if (!values.username) throw new Error('--username is required\n\n' + USAGE);
@@ -47,7 +55,13 @@ export function parseCliArgs(argv) {
     }
     return {
       command: 'find-streak',
-      options: { username: values.username, since: values.since, until: values.until },
+      options: {
+        username: values.username,
+        since: values.since,
+        until: values.until,
+        out: values.out || `data/${values.username}.jsonl`,
+        ...(values['user-id'] && { userId: values['user-id'] }),
+      },
     };
   }
 

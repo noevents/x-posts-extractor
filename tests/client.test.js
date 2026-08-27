@@ -109,7 +109,7 @@ test('retries on 429 with backoff then succeeds', async () => {
   );
 
   assert.deepEqual(pages.map((p) => p.tweets.map((t) => t.id_str)), [['1']]);
-  assert.deepEqual(sleeps.slice(0, 2), [30_000, 60_000]);
+  assert.deepEqual(sleeps.slice(0, 2), [60_000, 120_000]);
 });
 
 test('throws RetriesExhaustedError after MAX_RETRIES 429s', async () => {

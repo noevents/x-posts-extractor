@@ -31,7 +31,7 @@ test('find-streak: requires username, since, until', () => {
     'find-streak', '--username', 'joe', '--since', '2023-08-01', '--until', '2024-02-01',
   ]);
   assert.equal(command, 'find-streak');
-  assert.deepEqual(options, { username: 'joe', since: '2023-08-01', until: '2024-02-01' });
+  assert.deepEqual(options, { username: 'joe', since: '2023-08-01', until: '2024-02-01', out: 'data/joe.jsonl' });
 });
 
 test('find-streak: throws when --since or --until missing', () => {
